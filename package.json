@@ -1,0 +1,14 @@
+{
+  "name": "flame-graph-exercise",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node --perf-basic-prof-only-functions app.js"
+  },
+  "author": "katsa9",
+  "dependencies": {
+    "express": "^4.14.1",
+    "fast-levenshtein": "^2.0.6",
+    "flamebearer": "^1.1.3"
+  }
+}

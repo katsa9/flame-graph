@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>flamebearer</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<style>
+    html, body { height: 100%; }
+    body { font: 16px "Helvetica Neue", sans-serif; margin: 0; }
+    body.hover { background: #cfc; }
+    h1 { font-size: 30px; margin: 30px 30px 15px; }
+    h1 a { color: black; text-decoration: none; }
+    h1 a:hover { text-decoration: underline; }
+    #fire-icon { fill: #f53; width: 26px; height: 26px; vertical-align: -1px; }
+    #intro { margin: 0 30px; }
+    code { font-size: 13px; color: #444; }
+    code span { color: #aaa; }
+    #canvas { width: 100%; }
+    #controls { display: none; }
+    #search { margin-right: 10px; }
+    #highlight { position: absolute; pointer-events: none; background: #ffffff40; }
+    .loaded #intro { display: none; }
+    .loaded #header { display: flex; align-items: center; flex-flow: row wrap; padding: 7px 10px; }
+    .loaded h1 { font-size: 22px; margin: 0 auto 0 0; flex-shrink: 0; }
+    .loaded #fire-icon { width: 20px; height: 20px; }
+    .loaded #controls { display: block; flex-shrink: 0; }
+    #tooltip { position: absolute; pointer-events: none; background: #ffffff; white-space: nowrap; box-shadow: 1px 2px 4px 0px rgba(0,0,0,0.3); border-radius: 2px; padding: 3px 5px; font: 12px Tahoma, sans-serif; display: none; }
+    #tooltip .path { color: #888; font-size: 11px; }
+    #tooltip .time { color: #4a4; }
+</style>
+</head>
+<body>
+
+<div id="header">
+    <h1><svg id="fire-icon" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 15 15" style="enable-background:new 0 0 15 15;" xml:space="preserve"><path d="M7.5,0.5L5,4.5l-1.5-2 C2.9452,3.4753,0.8036,5.7924,0.8036,8.3036C0.8036,12.002,3.8017,15,7.5,15s6.6964-2.998,6.6964-6.6964 c0-2.5112-2.1416-4.8283-2.6964-5.8036l-1.5,2L7.5,0.5z M7.5,7c0,0,2.5,2.5618,2.5,4.5c0,0.8371-0.8259,2-2.5,2S5,12.3371,5,11.5 C5,9.6283,7.5,7,7.5,7z"/></svg> <a href="https://github.com/mapbox/flamebearer">flamebearer</a></h1>
+    <div id="controls">
+        <input id="search" placeholder="Search..." />
+        <button id="reset">Reset view</button>
+    </div>
+</div>
+<div id="highlight"></div>
+<div id="tooltip"></div>
+<div id="intro"><!--  --></div>
+<canvas id="canvas" height="0"></canvas>
+
+<!--  -->
+<script>'use strict';
+
+const introEl = document.getElementById('intro');
+const searchEl = document.getElementById('search');
+const highlightEl = document.getElementById('highlight');
+const tooltipEl = document.getElementById('tooltip');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+let names, levels, numTicks;
+
+names = ["(unknown)","~(anonymous) internal/bootstrap/node.js:1:1","~setupBuffer internal/bootstrap/node.js:403:21","~nativeModuleRequire internal/bootstrap/loaders.js:183:29","~NativeModule.compile internal/bootstrap/loaders.js:272:42","~(anonymous) buffer.js:1:1","(bytecode) ~Abort.ExtraWide","(unknown)","~createPool buffer.js:127:20","~(anonymous) internal/main/run_main_module.js:1:1","~prepareMainThreadExecution internal/bootstrap/pre_execution.js:9:36","~initializeCJSLoader internal/bootstrap/pre_execution.js:391:29","~(anonymous) internal/modules/cjs/loader.js:1:1","~(anonymous) internal/source_map/source_map_cache.js:1:1","~(anonymous) internal/modules/cjs/helpers.js:1:1","~(anonymous) url.js:1:1","~Module.runMain internal/modules/cjs/loader.js:1011:26","~Module._load internal/modules/cjs/loader.js:668:24","~Module.load internal/modules/cjs/loader.js:804:33","~Module._extensions..js internal/modules/cjs/loader.js:965:37","~Module._compile internal/modules/cjs/loader.js:865:37","~(anonymous) ./app.js:1:1","~require internal/modules/cjs/helpers.js:73:31","~Module.require internal/modules/cjs/loader.js:841:36","~(anonymous) ./node_modules/express/index.js:1:1","~(anonymous) ./node_modules/express/lib/express.js:1:1","~(anonymous) ./node_modules/body-parser/index.js:1:1","~Module._resolveFilename internal/modules/cjs/loader.js:739:35","~Module._findPath internal/modules/cjs/loader.js:460:28","~readFileSync fs.js:339:22","~tryReadSync fs.js:327:21","~readSync fs.js:482:18","~handleErrorFromBinding internal/fs/utils.js:215:32","~(anonymous) ./node_modules/express/lib/application.js:1:1","~tryPackage internal/modules/cjs/loader.js:279:20","~tryExtensions internal/modules/cjs/loader.js:340:23","~tryFile internal/modules/cjs/loader.js:325:17","~toRealPath internal/modules/cjs/loader.js:333:20","~(anonymous) ./node_modules/finalhandler/index.js:1:1","~(anonymous) ./node_modules/debug/src/index.js:1:1","~Module._resolveLookupPaths internal/modules/cjs/loader.js:622:38","~(anonymous) ./node_modules/debug/src/node.js:1:1","~loadNativeModule internal/modules/cjs/helpers.js:19:26","~NativeModule.compileForPublicLoader internal/bootstrap/loaders.js:214:57","~(anonymous) tty.js:1:1","~(anonymous) net.js:1:1","~(anonymous) stream.js:1:1","~(anonymous) _stream_writable.js:1:1","~(anonymous) internal/net.js:1:1","~isUint32 internal/validators.js:22:18","~(anonymous) ./node_modules/debug/src/debug.js:1:1","~realpathSync fs.js:1448:22","~getStderr internal/process/stdio.js:38:21","~createWritableStdioStream internal/process/stdio.js:149:35","~WriteStream tty.js:80:21","~Socket net.js:252:16","~(anonymous) ./node_modules/on-finished/index.js:1:1","~(anonymous) ./node_modules/statuses/index.js:1:1","~populateStatusesMap ./node_modules/statuses/index.js:60:30","~(anonymous) ./node_modules/express/lib/router/index.js:1:1","~(anonymous) ./node_modules/express/lib/router/route.js:1:1","~createDebug ./node_modules/debug/src/debug.js:63:21","~(anonymous) ./node_modules/methods/index.js:1:1","~(anonymous) http.js:1:1","~(anonymous) _http_server.js:1:1","~(anonymous) ./node_modules/express/lib/middleware/query.js:1:1","~(anonymous) ./node_modules/qs/lib/index.js:1:1","~tryCreateBuffer fs.js:312:25","~allocUnsafe buffer.js:345:42","~allocate buffer.js:370:18","~createUnsafeBuffer buffer.js:118:28","~(anonymous) ./node_modules/qs/lib/stringify.js:1:1","~(anonymous) ./node_modules/qs/lib/utils.js:1:1","~(anonymous) ./node_modules/qs/lib/utils.js:6:26","~(anonymous) ./node_modules/express/lib/utils.js:1:1","~closeSync fs.js:397:19","~(anonymous) ./node_modules/send/index.js:1:1","~(anonymous) ./node_modules/http-errors/index.js:1:1","~readPackageMain internal/modules/cjs/loader.js:269:25","~readPackage internal/modules/cjs/loader.js:221:21","(C++) _tiny_malloc_should_clear","~populateConstructorExports ./node_modules/http-errors/index.js:242:37","~forEachCode ./node_modules/http-errors/index.js:243:38","~hidden internal/errors.js:243:25","~(anonymous) internal/validators.js:76:3","~isInt32 internal/validators.js:18:17","~(anonymous) ./node_modules/mime/mime.js:1:1","~Module._extensions..json internal/modules/cjs/loader.js:978:39","~Mime.define ./node_modules/mime/mime.js:21:34","~(anonymous) ./node_modules/express/lib/request.js:1:1","~splitRoot fs.js:1410:33","~(anonymous) ./node_modules/accepts/index.js:1:1","~(anonymous) ./node_modules/mime-types/index.js:1:1","~(anonymous) ./node_modules/mime-db/index.js:1:1","~(anonymous) ./node_modules/type-is/index.js:1:1","(C++) __ZN2v88internal12StringHasher20HashSequentialStringIhEEjPKT_iy","~wrapfunction ./node_modules/depd/index.js:397:23","~getStack ./node_modules/depd/index.js:365:19","(C++) names_match","~(anonymous) ./node_modules/express/lib/response.js:1:1","~get ./node_modules/body-parser/index.js:122:23","~loadParser ./node_modules/body-parser/index.js:132:21","~(anonymous) ./node_modules/body-parser/lib/types/json.js:1:1","~(anonymous) ./node_modules/body-parser/lib/read.js:1:1","~(anonymous) ./node_modules/raw-body/index.js:1:1","~(anonymous) ./node_modules/iconv-lite/lib/index.js:1:1","~(anonymous) ./node_modules/safer-buffer/safer.js:1:1","~(anonymous) zlib.js:1:1","~listen ./node_modules/express/lib/application.js:616:29","~Server.listen net.js:1380:35","~listenInCluster net.js:1338:25","~(anonymous) cluster.js:1:1","~(anonymous) internal/cluster/master.js:1:1","~(anonymous) child_process.js:1:1","~(anonymous) internal/child_process.js:1:1","~(anonymous) dgram.js:1:1","~setupListenHandle net.js:1253:27","~defaultTriggerAsyncIdScope internal/async_hooks.js:292:36","~nextTick internal/process/task_queues.js:101:18","~processTicksAndRejections internal/process/task_queues.js:65:35","~emitListeningNT net.js:1331:25","~emit events.js:160:44","~onceWrapper events.js:294:21","~(anonymous) ./app.js:43:18","(C++) node::inspector::","~log internal/console/constructor.js:281:6","~Console.<computed> internal/console/constructor.js:270:47","~get internal/console/constructor.js:148:10","~getStdout internal/process/stdio.js:26:21","~addListener events.js:283:58","~_addListener events.js:221:22","~onconnection net.js:1516:22","~connectionListener _http_server.js:356:28","~connectionListenerInternal _http_server.js:362:36","~nowDate internal/http.js:9:17","~cache internal/http.js:19:15","(lib) /usr/lib/system/libsystem_kernel.dylib","~parserOnHeadersComplete _http_common.js:70:33","~parserOnIncoming _http_server.js:676:26","~app ./node_modules/express/lib/express.js:38:21","~handle ./node_modules/express/lib/application.js:158:29","~handle ./node_modules/express/lib/router/index.js:136:31","~next ./node_modules/express/lib/router/index.js:176:16","~process_params ./node_modules/express/lib/router/index.js:327:47","~(anonymous) ./node_modules/express/lib/router/index.js:275:64","~trim_prefix ./node_modules/express/lib/router/index.js:288:23","~handle ./node_modules/express/lib/router/layer.js:86:49","~query ./node_modules/express/lib/middleware/query.js:39:24","~expressInit ./node_modules/express/lib/middleware/init.js:29:30","~dispatch ./node_modules/express/lib/router/route.js:98:45","~next ./node_modules/express/lib/router/route.js:114:16","~(anonymous) ./app.js:19:14","~send ./node_modules/express/lib/response.js:107:25","~end _http_outgoing.js:689:45","~_implicitHeader _http_server.js:231:68","~writeHead _http_server.js:236:19","~_storeHeader _http_outgoing.js:306:22","(C++) __ZN2v88internal10JSFunction22ResetIfBytecodeFlushedEv","~parserOnMessageComplete _http_common.js:134:33","~Readable.push _stream_readable.js:222:35","~readableAddChunk _stream_readable.js:231:26","~onEofChunk _stream_readable.js:529:20","~emitReadable _stream_readable.js:559:22","~IncomingMessage _http_incoming.js:39:25","~onParserExecute _http_server.js:527:25","~Timeout.refresh internal/timers.js:192:37","~unrefActive internal/timers.js:297:21","~insert internal/timers.js:305:16","(C++) node::task_queue::RunMicrotasks","~(anonymous) ./app.js:34:11","~calculateStringDistance ./app.js:9:29","~get ./node_modules/fast-levenshtein/levenshtein.js:27:18","get ./node_modules/fast-levenshtein/levenshtein.js:27:18","~(anonymous) ./app.js:38:11","~Writable.uncork _stream_writable.js:315:37","~clearBuffer _stream_writable.js:506:21","~resume_ _stream_readable.js:972:17","~Readable.read _stream_readable.js:399:35","~endReadable _stream_readable.js:1166:21","~debug ./node_modules/debug/src/debug.js:65:17","(C++) __ZN2v88internal6String7FlattenEPNS0_7IsolateENS0_6HandleIS1_EENS0_14AllocationTypeE","~parseExtendedQueryString ./node_modules/express/lib/utils.js:291:34","~module.exports ./node_modules/qs/lib/parse.js:222:27","~Socket._writev net.js:776:36","~writevGeneric internal/stream_base_commons.js:111:23","~setHeader _http_outgoing.js:483:57","~write_ _http_outgoing.js:592:16","(C++) __ZN2v88internal21Builtin_HandleApiCallEiPmPNS0_7IsolateE","~resetSocketTimeout _http_server.js:750:28","~setStreamTimeout internal/stream_base_commons.js:220:26","~setUnrefTimeout internal/timers.js:345:25","~clearTimeout timers.js:155:22","~unenroll timers.js:62:18","~_handles_method ./node_modules/express/lib/router/route.js:58:59","~_addHeaderLines _http_incoming.js:111:25","~_addHeaderLine _http_incoming.js:246:24","~append internal/linkedlist.js:29:16","~remove internal/linkedlist.js:15:16","~_finish _http_server.js:171:52","~endReadableNT _stream_readable.js:1176:23","~matchKnownFields _http_incoming.js:139:26","~onCorkedFinish _stream_writable.js:684:24","~onFinish _http_outgoing.js:685:18","~resOnFinish _http_server.js:630:21","~_dump _http_incoming.js:273:49","~Readable.resume _stream_readable.js:951:37","~resume _stream_readable.js:965:16","~(anonymous) ./app.js:31:22","~restore ./node_modules/express/lib/router/index.js:620:17","~clearIncoming _http_server.js:617:23","~(anonymous) vm.js:1:1","~assignSocket _http_server.js:205:62","~socketListenerWrap _http_server.js:794:37","~flow _stream_readable.js:996:14","~(anonymous) internal/util/debuglog.js:57:18","(C++) __ZN2v88internal14LookupIterator17PropertyOrElementEPNS0_7IsolateENS0_6HandleINS0_6ObjectEEENS4_INS0_4NameEEENS4_INS0_10JSReceiverEEENS1_13ConfigurationE","~_send _http_outgoing.js:243:49","~byteLength buffer.js:687:20","~getPathname ./node_modules/express/lib/router/index.js:526:21","~parseurl ./node_modules/parseurl/index.js:35:19","~fresh ./node_modules/parseurl/index.js:153:16","~fastparse ./node_modules/parseurl/index.js:95:20","(C++) __ZN2v88internal18Builtin_ArrayShiftEiPmPNS0_7IsolateE","(C++) __ZN2v88internalL23Builtin_Impl_ArrayShiftENS0_16BuiltinArgumentsEPNS0_7IsolateE","~_writeRaw _http_outgoing.js:276:19","~utcDate internal/http.js:14:17","~TimersList internal/timers.js:221:20","~Timeout internal/timers.js:152:17","~detachSocket _http_server.js:215:62","(lib) /usr/lib/system/libsystem_platform.dylib","~getProtohost ./node_modules/express/lib/router/index.js:535:22","~matchLayer ./node_modules/express/lib/router/index.js:572:20","~app.<computed> ./node_modules/express/lib/application.js:473:25","~processTimers internal/timers.js:460:25","~listOnTimeout internal/timers.js:480:25","processTicksAndRejections internal/process/task_queues.js:65:35","nextTick internal/process/task_queues.js:101:18","processTimers internal/timers.js:460:25","~normalizeParseOptions ./node_modules/qs/lib/parse.js:189:59","~isRegExp ./node_modules/qs/lib/utils.js:204:33","~isUint8Array internal/util/types.js:19:22","~(anonymous) internal/per_context/primordials.js:24:10","next ./node_modules/express/lib/router/index.js:176:16","(C++) __ZN2v88internal12_GLOBAL__N_124ProbeInstantiationsCacheEPNS0_7IsolateEiNS1_11CachingModeE","~processHeader _http_outgoing.js:416:23","~storeHeader _http_outgoing.js:430:21","(C++) __malloc_initialize","~_flush _http_outgoing.js:778:51","~_flushOutput _http_outgoing.js:796:63","~emitCloseNT _http_server.js:669:21","~ServerResponse _http_server.js:147:24","~OutgoingMessage _http_outgoing.js:72:25","(C++) __ZN2v88internal12_GLOBAL__N_119HandleApiCallHelperILb0EEENS0_11MaybeHandleINS0_6ObjectEEEPNS0_7IsolateENS0_6HandleINS0_10HeapObjectEEESA_NS8_INS0_20FunctionTemplateInfoEEENS8_IS4_EENS0_16BuiltinArgumentsE","(C++) ___vfprintf","~emitReadable_ _stream_readable.js:570:23","emit events.js:160:44","~onParserExecuteCommon _http_server.js:570:31","~peek internal/priority_queue.js:40:7","_addHeaderLine _http_incoming.js:246:24","~initAsyncResource internal/timers.js:142:27","insert internal/timers.js:305:16","(C++) __ZN2v88internal25FunctionCallbackArguments4CallENS0_15CallHandlerInfoE","~checkInvalidHeaderChar _http_common.js:220:32","~shift internal/priority_queue.js:113:8","~removeAt internal/priority_queue.js:88:11","~percolateDown internal/priority_queue.js:44:16","_addHeaderLines _http_incoming.js:111:25","(C++) __ZN2v88internal19SequentialStringKeyIhE7IsMatchENS0_6StringE","(C++) __ZN2v88internal12_GLOBAL__N_117InstantiateObjectEPNS0_7IsolateENS0_6HandleINS0_18ObjectTemplateInfoEEENS4_INS0_10JSReceiverEEEb","(C++) __ZN2v88internal9Accessors20FunctionLengthGetterENS_5LocalINS_4NameEEERKNS_20PropertyCallbackInfoINS_5ValueEEE"];
+levels = [[0,1,0,0,4609,7],[0,1,1,0,1,1,0,22,6,0,1734,7,0,40,9,0,1,119,0,2,131,0,114,137,0,5,158,0,9,164,0,15,233,0,2665,235,0,1,237],[0,1,2,0,1,2,22,4,6,0,21,7,0,1698,168,0,9,176,0,1,187,0,1,199,0,1,10,0,39,16,0,1,120,0,2,121,0,11,6,0,76,138,0,9,163,0,15,194,0,3,266,0,5,159,0,2,6,0,6,7,0,1,256,0,3,6,0,1,214,0,10,234,0,1,257,1,2622,6,0,30,7,0,8,176,0,1,187,0,1,249,0,2,254,0,1,234],[0,1,3,0,1,3,26,1,6,0,4,7,0,16,201,0,1,6,0,1652,169,0,45,173,0,1,6,0,5,177,0,3,213,0,1,187,0,1,6,0,1,11,0,39,17,0,1,121,0,2,132,10,1,6,0,7,6,0,40,121,0,8,188,0,6,211,0,3,250,0,12,255,0,4,6,0,5,7,0,2,6,0,10,195,0,3,258,0,3,6,0,5,160,2,2,6,0,4,165,0,1,6,3,1,6,0,5,6,0,4,7,0,1,263,0,1,6,1,1,6,0,2566,169,0,55,173,0,4,6,0,26,201,0,1,6,0,3,177,0,3,213,0,1,214,0,1,6,0,1,6,0,1,6,0,1,214,0,1,6],[0,1,4,0,1,4,27,4,6,0,16,202,1,1,6,0,1651,170,0,4,6,0,41,153,1,5,178,0,3,177,2,1,3,0,1,6,0,38,18,0,1,122,0,2,7,18,1,6,0,39,139,0,8,189,0,2,6,0,3,212,0,1,247,0,3,251,0,12,139,4,3,6,0,2,7,2,6,6,0,4,200,0,3,6,1,1,229,0,1,267,0,1,6,0,4,161,4,1,6,0,3,166,0,1,6,8,1,6,0,2,6,0,2,7,0,1,264,3,2,6,0,2564,170,0,3,6,0,52,153,4,1,6,0,25,202,1,1,6,0,2,178,0,1,6,0,2,177,0,1,6,3,1,6,0,1,6],[0,1,5,0,1,5,31,16,121,2,28,6,0,6,171,0,1617,172,3,1,229,0,2,6,0,25,174,0,9,186,0,2,198,0,2,216,0,1,217,1,1,6,0,4,7,0,3,214,2,1,4,0,1,6,0,38,19,0,1,123,0,2,133,19,1,6,0,38,140,0,1,7,0,4,190,0,3,191,2,3,210,0,1,248,0,3,7,0,1,6,0,11,140,7,1,6,0,1,7,7,1,6,0,2,6,0,2,200,1,2,6,4,4,162,5,3,167,0,1,6,11,2,6,0,1,265,4,1,6,0,44,6,0,2520,172,3,3,6,0,9,174,0,35,186,0,2,198,0,2,216,0,1,217,5,15,121,0,10,255,2,1,214,0,1,236,1,1,6,0,1,178],[0,1,3,0,1,8,31,16,203,30,6,6,408,1209,6,6,25,175,0,9,154,0,2,6,0,1,6,0,1,224,0,1,6,2,3,6,0,1,7,0,3,6,2,1,12,1,38,20,0,1,124,0,2,134,20,1,6,0,36,141,0,1,232,0,1,6,0,2,6,0,2,166,0,1,6,0,2,192,2,3,129,0,1,6,0,1,6,0,2,7,1,2,6,0,9,141,8,1,7,10,2,6,7,4,7,5,2,6,0,1,196,14,1,6,626,1943,6,6,9,175,0,2,6,0,27,154,0,6,216,0,2,6,0,2,224,0,1,187,5,1,6,0,14,203,0,1,6,0,9,203,2,1,6,3,1,236],[0,1,4,0,1,6,31,1,7,0,3,189,0,4,204,0,6,209,0,1,222,0,1,228,34,2,6,411,1134,6,0,72,180,6,5,6,0,20,7,0,1,6,0,8,155,3,1,7,4,1,6,0,1,215,0,1,7,5,1,3,1,38,21,0,1,125,0,2,135,21,2,6,0,20,142,0,1,179,0,3,208,0,2,230,0,8,242,0,1,6,3,1,167,0,1,260,1,1,7,0,1,197,2,1,6,0,2,130,2,2,7,3,1,179,0,8,242,8,1,6,19,3,6,0,1,7,6,1,6,0,1,197,647,1821,6,0,116,180,6,2,6,0,7,7,2,1,6,0,26,155,0,1,6,0,5,224,2,1,6,0,1,7,0,1,261,6,2,6,0,6,189,0,3,204,0,1,209,0,1,222,0,1,228,1,7,189,0,1,204,0,1,228],[0,1,6,0,1,6,31,1,6,0,1,6,0,2,190,0,4,205,0,6,210,0,1,223,0,1,6,1662,2,6,0,20,183,1,1,6,0,7,156,3,1,7,6,1,6,5,1,4,1,36,22,0,2,108,0,1,126,0,2,6,23,18,143,0,2,218,0,1,6,0,3,6,0,2,6,2,6,144,4,1,6,0,1,6,1,1,6,0,1,6,3,1,6,0,1,7,2,2,6,3,1,6,0,8,144,28,3,6,0,1,6,7,1,6,2592,7,183,3,2,6,0,23,156,0,1,262,1,1,6,0,4,7,3,1,240,9,2,6,0,4,190,0,2,6,0,1,205,0,1,210,0,1,6,0,1,7,1,1,6,0,1,7,0,3,190,0,2,191,0,1,6,0,1,7],[33,1,6,1,2,166,0,4,206,0,1,6,0,5,129,1666,1,6,0,19,7,2,3,6,0,4,225,3,1,6,12,1,13,1,1,6,0,35,23,0,2,109,0,1,127,0,2,136,23,18,144,0,2,219,8,6,145,13,1,6,8,8,145,2632,7,7,5,5,6,0,15,225,0,3,244,0,1,6,2,3,6,0,1,7,3,1,241,11,4,166,2,1,206,0,1,129,1,1,7,2,1,6,0,1,6,0,1,166,0,1,227,0,2,192,1,1,6],[35,2,167,0,4,7,1,5,130,1667,1,7,0,18,184,3,2,6,0,1,6,0,3,135,16,1,3,2,35,17,0,2,110,0,1,128,25,18,145,0,2,221,8,6,146,22,1,6,0,7,146,2632,1,7,0,6,184,10,15,135,0,3,245,6,1,6,3,1,6,11,1,6,0,3,167,2,1,236,0,1,130,1,1,6,4,1,187,0,1,6,0,2,6],[35,2,6,0,3,6,0,1,7,1,1,6,0,4,7,1667,1,6,0,17,7,0,1,187,6,3,190,16,1,4,2,35,18,0,1,3,0,1,116,0,1,129,25,1,6,0,17,146,0,2,6,8,6,147,23,7,147,2632,1,6,0,1,6,0,5,7,10,6,6,0,9,190,0,3,6,23,2,6,0,1,196,3,1,6,6,1,261],[39,1,6,0,1,6,2,4,6,1668,1,6,0,16,7,0,1,6,6,2,166,0,1,227,16,1,14,2,35,19,0,1,4,0,1,117,0,1,130,26,17,147,10,1,181,0,5,242,23,1,6,0,6,242,2634,2,6,0,3,187,11,4,6,0,1,253,0,1,6,0,6,166,0,2,227,27,1,6,0,1,197],[1716,5,6,0,11,7,7,1,6,0,1,167,0,1,6,16,1,3,2,35,20,0,1,111,0,1,118,0,1,6,26,15,142,0,2,181,10,1,182,0,5,144,24,6,144,2636,2,243,0,1,268,17,1,6,0,3,167,0,1,187,0,1,260,0,1,6,0,1,259,28,1,6],[1721,9,6,0,2,7,8,1,226,17,1,4,2,35,24,0,1,3,0,1,6,0,1,6,26,15,143,0,2,182,10,1,6,0,5,145,24,6,145,2657,1,196,0,1,214,0,1,226,0,1,252,0,1,6,1,1,7],[1723,7,6,0,2,6,8,1,6,17,1,15,2,35,22,0,1,4,0,1,6,27,15,144,0,1,6,0,1,238,11,5,146,24,6,146,2657,1,6,0,1,6,0,1,6,3,1,6],[1758,1,6,2,35,23,0,1,112,28,15,145,1,1,239,11,5,148,24,6,148],[1758,1,6,2,35,17,0,1,3,28,1,6,0,13,146,0,1,179,1,1,6,11,1,6,0,1,185,0,3,242,24,3,185,0,3,242],[1761,35,18,0,1,4,29,13,148,0,1,6,14,1,6,0,3,144,24,3,6,1,2,144],[1761,35,19,0,1,113,29,1,6,0,8,142,0,4,185,15,1,246,0,1,6,0,2,146,25,2,6,1,2,146],[1761,35,20,0,1,3,30,5,143,0,1,193,0,1,218,0,1,231,0,4,6,17,2,149,28,1,6,0,1,149],[1761,35,25,0,1,4,30,5,144,0,1,6,0,1,219,0,1,6,1,3,6,17,1,6,0,1,150,29,1,150],[1761,32,22,0,3,100,0,1,114,30,5,146,0,1,6,0,1,220,23,1,146,29,1,146],[1761,32,23,0,3,101,0,1,3,30,5,149,1,1,6,23,1,207,29,1,7],[1761,32,17,0,3,22,0,1,4,30,1,6,0,4,150,25,1,6,29,1,269],[1761,32,18,0,3,23,0,1,115,31,4,146],[1761,32,19,0,3,17,0,1,6,31,1,151,0,3,207],[1761,31,20,0,1,29,0,3,18,0,1,6,31,1,152,0,3,6],[1761,1,26,0,25,33,0,4,89,0,1,99,0,1,30,0,3,19,32,1,153,1,2,6],[1761,1,22,0,25,22,0,3,22,0,1,96,0,1,22,0,1,31,0,3,20,32,1,154],[1761,1,23,0,25,23,0,3,23,0,1,97,0,1,23,0,1,32,0,3,102,32,1,155],[1761,1,17,0,25,17,0,3,17,0,1,6,0,1,17,0,1,6,0,3,22,32,1,156],[1761,1,27,0,23,18,0,2,27,0,2,18,0,1,27,0,1,98,0,1,27,1,3,23,32,1,6],[1761,1,28,0,23,19,0,1,28,0,1,40,0,2,19,0,1,28,1,1,28,1,3,17,32,1,157],[1761,1,6,0,22,20,0,1,29,0,1,34,0,1,6,0,2,20,0,1,34,1,1,34,1,3,18],[1761,1,6,0,8,38,0,3,59,0,2,65,0,9,74,0,1,30,0,1,35,1,1,91,0,1,94,0,1,35,1,1,35,1,3,19],[1762,8,22,0,3,22,0,2,22,0,9,22,0,1,6,0,1,36,1,1,22,0,1,22,0,1,36,1,1,36,1,3,20],[1762,8,23,0,3,23,0,2,23,0,9,23,1,1,37,1,1,23,0,1,23,0,1,37,1,1,37,1,3,103],[1762,8,17,0,3,17,0,2,17,0,9,17,1,1,6,1,1,17,0,1,17,0,1,51,1,1,6,1,3,22],[1762,8,18,0,3,18,0,2,18,0,1,6,0,8,18,1,1,6,1,1,18,0,1,27,0,1,90,3,3,23],[1762,8,19,0,3,19,0,2,19,1,8,19,3,1,19,0,1,28,0,1,6,3,3,17],[1762,8,20,0,1,6,0,2,20,0,2,20,1,7,20,0,1,29,3,1,20,0,1,6,4,2,18,0,1,42],[1762,6,39,0,1,56,0,1,57,0,1,6,0,2,60,0,2,66,1,7,76,0,1,75,3,1,92,0,1,95,4,2,19,0,1,43],[1762,6,22,0,1,22,0,1,58,1,1,22,0,1,61,0,2,22,1,7,22,0,1,6,3,1,22,5,2,20,0,1,4],[1762,6,23,0,1,23,0,1,6,1,1,23,0,1,6,0,2,23,1,7,23,4,1,23,5,2,104,0,1,107],[1762,6,17,0,1,17,0,1,6,1,1,17,1,2,17,1,7,17,4,1,17,5,2,22,0,1,6],[1762,5,18,0,1,27,0,1,27,0,1,6,1,1,18,1,2,18,1,6,18,0,1,27,4,1,18,5,2,23,0,1,6],[1762,5,19,0,1,40,0,1,28,2,1,19,1,2,19,1,6,19,0,1,40,4,1,19,5,2,17],[1762,5,20,0,1,6,0,1,34,2,1,20,1,1,20,0,1,29,1,4,20,0,2,29,0,1,6,4,1,20,5,1,18,0,1,27],[1762,5,41,0,1,6,0,1,35,2,1,62,1,1,71,0,1,67,1,2,77,0,2,86,0,1,30,0,1,75,5,1,93,5,1,19,0,1,28],[1762,4,22,0,1,52,1,1,36,2,1,22,1,1,22,0,1,68,1,1,22,0,1,81,0,1,22,0,1,88,0,1,31,0,1,83,5,1,22,5,1,20,0,1,34],[1762,4,23,0,1,53,1,1,37,2,1,23,1,1,23,0,1,69,1,1,23,0,1,6,0,1,23,0,1,6,0,1,83,0,1,84,5,1,23,5,1,105,0,1,78],[1762,4,17,0,1,54,1,1,51,2,1,17,1,1,17,0,1,70,1,1,17,0,1,82,0,1,17,1,1,6,0,1,85,5,1,17,5,1,22,0,1,79],[1762,2,18,0,2,42,0,1,55,1,1,6,2,1,42,1,1,18,0,1,6,1,1,27,0,1,6,0,1,18,2,1,6,5,1,18,5,1,23,0,1,6],[1762,2,19,0,2,43,0,1,6,1,1,6,2,1,43,1,1,19,0,1,6,1,1,28,0,1,6,0,1,87,8,1,87,5,1,17,0,1,6],[1762,1,20,0,1,29,0,2,4,5,1,4,1,1,20,2,1,34,1,1,6,8,1,6,5,1,18],[1762,1,50,0,1,49,0,2,44,5,1,63,1,1,72,2,1,78,1,1,6,8,1,6,5,1,19],[1762,1,22,0,1,6,0,2,3,5,1,3,1,1,73,2,1,79,16,1,20],[1762,1,23,0,1,6,0,2,4,5,1,4,1,1,6,2,1,6,16,1,106],[1762,1,17,1,2,45,5,1,64,4,1,80,16,1,6],[1762,1,27,1,2,3,5,1,6,21,1,6],[1762,1,28,1,2,4],[1762,1,34,1,1,46,0,1,48],[1762,1,35,1,1,3,0,1,6],[1762,1,36,1,1,4,0,1,6],[1762,1,37,1,1,47],[1762,1,51,1,1,6],[1762,1,6,1,1,6],[1764,1,6]];
+numTicks = 4610;
+
+let rangeMin = 0;
+let rangeMax = 1;
+let topLevel = 0;
+let query = '';
+let graphWidth, pxPerTick;
+
+const pxPerLevel = 18;
+const collapseThreshold = 5;
+const hideThreshold = 0.5;
+const labelThreshold = 20;
+
+highlightEl.style.height = pxPerLevel + 'px';
+
+if (levels) {
+    init();
+}
+
+function init() {
+    document.body.classList.add('loaded');
+
+    // delta-decode bar positions
+    for (const level of levels) {
+        let prev = 0;
+        for (let i = 0; i < level.length; i += 3) {
+            level[i] += prev;
+            prev = level[i] + level[i + 1];
+        }
+    }
+
+    updateFromHash();
+    render();
+}
+
+window.onhashchange = () => {
+    updateFromHash();
+    render();
+};
+canvas.onclick = (e) => {
+    const {i, j} = xyToBar(e.offsetX, e.offsetY);
+    if (j === -1) return;
+    window.location.hash = [i, j].join(',');
+    removeHover();
+};
+document.getElementById('reset').onclick = () => {
+    searchEl.value = query = '';
+    window.location.hash = '';
+    render();
+};
+window.onresize = render;
+
+searchEl.oninput = (e) => {
+    query = e.target.value;
+    render();
+};
+
+function updateFromHash() {
+    const [i, j] = window.location.hash.substr(1).split(',').map(Number);
+
+    if (!isNaN(i) && !isNaN(j)) {
+        topLevel = i;
+        rangeMin = levels[i][j] / numTicks;
+        rangeMax = (levels[i][j] + levels[i][j + 1]) / numTicks;
+    } else {
+        topLevel = 0;
+        rangeMin = 0;
+        rangeMax = 1;
+    }
+}
+
+function tickToX(i) {
+    return (i - numTicks * rangeMin) * pxPerTick;
+}
+
+function render() {
+    if (!levels) return;
+
+    graphWidth = canvas.width = canvas.clientWidth;
+    canvas.height = pxPerLevel * (levels.length - topLevel);
+    canvas.style.height = canvas.height + 'px';
+
+    if (devicePixelRatio > 1) {
+        canvas.width *= 2;
+        canvas.height *= 2;
+        ctx.scale(2, 2);
+    }
+
+    pxPerTick = graphWidth / numTicks / (rangeMax - rangeMin);
+
+    ctx.textBaseline = 'middle';
+    ctx.font = '10px Tahoma, sans-serif';
+    ctx.strokeStyle = 'white';
+
+    for (let i = 0; i < levels.length - topLevel; i++) {
+        const level = levels[topLevel + i];
+
+        for (let j = 0; j < level.length; j += 3) {
+            const barIndex = level[j];
+            const x = tickToX(barIndex);
+            const y = i * pxPerLevel;
+            let numBarTicks = level[j + 1];
+
+            const inQuery = query && (names[level[j + 2]].indexOf(query) >= 0) || false;
+
+            // merge very small blocks into big "collapsed" ones for performance
+            const collapsed = numBarTicks * pxPerTick <= collapseThreshold;
+            if (collapsed) {
+                while (
+                    j < level.length - 3 &&
+                    barIndex + numBarTicks === level[j + 3] &&
+                    level[j + 4] * pxPerTick <= collapseThreshold &&
+                    (inQuery === (query && (names[level[j + 5]].indexOf(query) >= 0) || false))
+                ) {
+                    j += 3;
+                    numBarTicks += level[j + 1];
+                }
+            }
+
+            const sw = numBarTicks * pxPerTick - (collapsed ? 0 : 0.5);
+            const sh = pxPerLevel - 0.5;
+
+            if (x < -1 || x + sw > graphWidth + 1 || sw < hideThreshold) continue;
+
+            ctx.beginPath();
+            ctx.rect(x, y, sw, sh);
+
+            const ratio = numBarTicks / numTicks;
+
+            if (!collapsed) {
+                ctx.stroke();
+                const intensity = Math.min(1, ratio * Math.pow(1.16, i) / (rangeMax - rangeMin));
+                const h = 50 - 50 * intensity;
+                const l = 65 + 7 * intensity;
+                ctx.fillStyle = inQuery ? 'lightgreen' : `hsl(${h}, 100%, ${l}%)`;
+            } else {
+                ctx.fillStyle = inQuery ? 'lightgreen' : '#eee';
+            }
+            ctx.fill();
+
+            if (!collapsed && sw >= labelThreshold) {
+
+                const percent = Math.round(10000 * ratio) / 100;
+                const name = `${names[level[j + 2]]} (${percent}%, ${numBarTicks} samples)`;
+
+                ctx.save();
+                ctx.clip();
+                ctx.fillStyle = 'black';
+                ctx.fillText(name, Math.max(x, 0) + 1, y + sh / 2);
+                ctx.restore();
+            }
+        }
+    }
+}
+
+// pixel coordinates to bar coordinates in the levels array
+function xyToBar(x, y) {
+    const i = Math.floor(y / pxPerLevel) + topLevel;
+    const j = binarySearchLevel(x, levels[i]);
+    return {i, j};
+}
+
+// binary search of a block in a stack level
+function binarySearchLevel(x, level) {
+    let i = 0;
+    let j = level.length - 3;
+    while (i <= j) {
+        const m = 3 * ((i / 3 + j / 3) >> 1);
+        const x0 = tickToX(level[m]);
+        const x1 = tickToX(level[m] + level[m + 1]);
+        if (x0 <= x && x1 >= x) {
+            return x1 - x0 > collapseThreshold ? m : -1;
+        }
+        if (x0 > x) {
+            j = m - 3;
+        } else {
+            i = m + 3;
+        }
+    }
+    return -1;
+}
+
+if (window.orientation === undefined) {
+    canvas.onmousemove = addHover;
+    canvas.onmouseout = window.onscroll = removeHover;
+}
+
+function removeHover() {
+    canvas.style.cursor = '';
+    highlightEl.style.display = 'none';
+    tooltipEl.style.display = 'none';
+}
+
+function addHover(e) {
+    const {i, j} = xyToBar(e.offsetX, e.offsetY);
+
+    if (j === -1 || e.offsetX < 0 || e.offsetX > graphWidth) {
+        removeHover();
+        return;
+    }
+
+    canvas.style.cursor = 'pointer';
+
+    const level = levels[i];
+    const x = tickToX(level[j]);
+    const y = (i - topLevel) * pxPerLevel;
+    const sw = tickToX(level[j] + level[j + 1]) - x;
+
+    highlightEl.style.display = 'block';
+    highlightEl.style.left = x + 'px';
+    highlightEl.style.top = (canvas.offsetTop + y) + 'px';
+    highlightEl.style.width = sw + 'px';
+
+    const numBarTicks = level[j + 1];
+    const percent = Math.round(10000 * numBarTicks / numTicks) / 100;
+    const time = `<span class="time">(${percent}%, ${numBarTicks} samples)</span>`;
+    let content = names[level[j + 2]];
+    if (content[0] !== '(') content = content.replace(' ', ` ${time}<br><span class="path">`) + '</span>';
+    else content += ` ${time}`;
+
+    tooltipEl.innerHTML = content;
+    tooltipEl.style.display = 'block';
+    tooltipEl.style.left = (Math.min(e.offsetX + 15 + tooltipEl.clientWidth, graphWidth) - tooltipEl.clientWidth) + 'px';
+    tooltipEl.style.top = (canvas.offsetTop + e.offsetY + 12) + 'px';
+}
+
+// (function frame() { if (levels) render(); requestAnimationFrame(frame); })();
+
+
+</script>
+</body>
+</html>
