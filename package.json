@@ -7,7 +7,7 @@
   },
   "author": "katsa9",
   "dependencies": {
-    "express": "^4.14.1",
+    "express": "^4.17.3",
     "fast-levenshtein": "^2.0.6",
     "flamebearer": "^1.1.3"
   }
